@@ -76,9 +76,7 @@ python LSTM_peptides.py --dataset $TRAINING_DATA_FILE --name $YOUR_RUN_NAME  $FU
 - `step` *(OPTIONAL, default=`1`)*
   - Step size to move the sliding window or the prediction target
 - `target` *(OPTIONAL, default=`all`)*
-  - whether to learn all proceeding characters or just the last the single next one in sequence
-- `target` *(OPTIONAL, default='all')*
-  - whether to learn all proceeding characters or just the last 'one' in sequence
+  - whether to learn 'all' proceeding characters or just the last the single next 'one' in sequence
 - `padlen` *(OPTIONAL, default=0)*
   - number of tailing padding spaces to add to the sequences. If 0, sequences are padded to the length of the longest 
   sequence in the dataset. 

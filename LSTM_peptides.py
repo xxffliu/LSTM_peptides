@@ -7,6 +7,10 @@
 Code for training a LSTM model on peptide sequences followed by sampling novel sequences through the model.
 Check the readme for possible flags to use with this script.
 """
+
+import warnings
+warnings.simplefilter(action = 'ignore', category = FutureWarning)
+
 import json
 import os
 import pickle
@@ -66,7 +70,6 @@ flags.DEFINE_boolean("refs", True, "whether reference sequence sets should be ge
 
 FLAGS = flags.FLAGS
 
-
 def _save_flags(flgs, filename):
     """ Function to save used tf.FLAGS to log-file
 
@@ -75,7 +78,7 @@ def _save_flags(flgs, filename):
     """
     with open(filename, 'w') as f:
         f.write("Used flags:\n-----------\n")
-        for k, v in flgs.__dict__['__flags'].items():
+        for k, v in flgs.flag_values_dict().items():
             f.write(k + ": " + str(v) + "\n")
 
 
@@ -83,7 +86,7 @@ def _onehotencode(s, vocab=None):
     """ Function to one-hot encode a sring.
 
     :param s: {str} String to encode in one-hot fashion
-    :param vocab: vocabulary to use fore encoding, if None, default AAs are used
+    :param vocab: vocabulary to use for encoding, if None, default AAs are used
     :return: one-hot encoded string as a np.array
     """
     if not vocab:
@@ -101,6 +104,7 @@ def _onehotencode(s, vocab=None):
     for l in s:
         result.append(to_one_hot[l])
     result = np.array(result)
+    # reshape the result into ,atrix with shape(1, seq_len, vocab_len)
     return np.reshape(result, (1, result.shape[0], result.shape[1])), to_one_hot, vocab
 
 
@@ -298,7 +302,7 @@ class SequenceHandler(object):
         with open(fname, 'w') as f:
             print("Analyzing...")
             f.write("ANALYSIS OF SAMPLED SEQUENCES\n==============================\n\n")
-            f.write("Nr. of duplicates in generated sequences: %i\n" % (len(self.generated) - len(set(self.generated))))
+            f.write("Number of duplicates in generated sequences: %i\n" % (len(self.generated) - len(set(self.generated))))
             count = len(set(self.generated) & set(self.sequences))  # get shared entries in both lists
             f.write("%.1f percent of generated sequences are present in the training data.\n" %
                     ((count / len(self.generated)) * 100))
@@ -459,10 +463,10 @@ class Model(object):
         self.logdir = './' + session_name
         self.l2 = l2_reg
         if ask and os.path.exists(self.logdir):
-            decision = raw_input('\nSession folder already exists!\n'
+            decision = input('\nSession folder already exists!\n'
                                  'Do you want to overwrite the previous session? [y/n] ')
             if decision in ['n', 'no', 'N', 'NO', 'No']:
-                self.logdir = './' + raw_input('Enter new session name: ')
+                self.logdir = './' + input('Enter new session name: ')
                 os.makedirs(self.logdir)
         self.checkpointdir = self.logdir + '/checkpoint/'
         if not os.path.exists(self.checkpointdir):
@@ -518,7 +522,7 @@ class Model(object):
                              activation='softmax',
                              kernel_regularizer=self.l2,
                              kernel_initializer=weight_init))
-        self.model.compile(loss=self.losstype, optimizer=optimizer)
+        self.model.compile(loss=self.losstype, optimizer=optimizer, metrics=['accuracy'])
         with open(self.checkpointdir + "model.json", 'w') as f:
             json.dump(self.model.to_json(), f)
         self.get_num_params()
@@ -532,10 +536,10 @@ class Model(object):
         self.session_name = session_name
         self.logdir = './' + session_name
         if os.path.exists(self.logdir):
-            decision = raw_input('\nSession folder already exists!\n'
+            decision = input('\nSession folder already exists!\n'
                                  'Do you want to overwrite the previous session? [y/n] ')
             if decision in ['n', 'no', 'N', 'NO', 'No']:
-                self.logdir = './' + raw_input('Enter new session name: ')
+                self.logdir = './' + input('Enter new session name: ')
                 os.makedirs(self.logdir)
         self.checkpointdir = self.logdir + '/checkpoint/'
         if not os.path.exists(self.checkpointdir):
@@ -777,7 +781,7 @@ def main(infile, sessname, neurons=64, layers=2, epochs=100, batchsize=128, wind
     # generating new data through sampling
     print("\nSAMPLING %i SEQUENCES...\n" % sample)
     data.generated = model.sample(sample, start=aa, maxlen=samplelength, show=False, temp=temperature)
-    data.analyze_generated(sample, fname=model.logdir + '/analysis_temp' + str(temperature) + '.txt', plot=True)
+    data.analyze_generated(sample, fname=model.logdir + '/analysis_temp' + str(temperature) + '.txt', plot=False)
     data.save_generated(model.logdir, model.logdir + '/sampled_sequences_temp' + str(temperature) + '.csv')
 
 
